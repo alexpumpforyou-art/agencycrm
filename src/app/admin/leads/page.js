@@ -15,18 +15,19 @@ const ALL_STATUSES = ['NEW', 'NEGOTIATIONS', 'IN_PROGRESS', 'DEAL_CLOSED', 'REJE
 export default function AdminLeadsPage() {
   const [leads, setLeads] = useState([]);
   const [agents, setAgents] = useState([]);
-  const [filter, setFilter] = useState('');
-  const [agentFilter, setAgentFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [editLead, setEditLead] = useState(null);
+  const [filter, setFilter] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingLead, setEditingLead] = useState(null);
+  const [createForm, setCreateForm] = useState({
+    name: '', contactMethod: '', projectDescription: '', budget: '', agentId: '', status: 'NEW', notes: '',
+  });
+  const [editForm, setEditForm] = useState({});
+  const [error, setError] = useState('');
 
   const fetchData = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (filter) params.set('status', filter);
-    if (agentFilter) params.set('agentId', agentFilter);
-
     const [leadsRes, agentsRes] = await Promise.all([
-      fetch('/api/leads?' + params.toString()),
+      fetch('/api/leads' + (filter ? `?status=${filter}` : '')),
       fetch('/api/agents'),
     ]);
     const leadsData = await leadsRes.json();
@@ -34,30 +35,52 @@ export default function AdminLeadsPage() {
     setLeads(leadsData.leads || []);
     setAgents(agentsData.agents || []);
     setLoading(false);
-  }, [filter, agentFilter]);
+  }, [filter]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  async function handleUpdateLead() {
-    if (!editLead) return;
-    await fetch(`/api/leads/${editLead.id}`, {
-      method: 'PATCH',
+  async function handleCreate(e) {
+    e.preventDefault();
+    setError('');
+    const res = await fetch('/api/leads', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: editLead.status,
-        orderCost: editLead.orderCost ? parseFloat(editLead.orderCost) : null,
-        notes: editLead.notes,
-        agentId: editLead.agentId ? parseInt(editLead.agentId) : null,
-      }),
+      body: JSON.stringify(createForm),
     });
-    setEditLead(null);
+    if (!res.ok) { setError((await res.json()).error); return; }
+    setCreateForm({ name: '', contactMethod: '', projectDescription: '', budget: '', agentId: '', status: 'NEW', notes: '' });
+    setShowCreate(false);
     fetchData();
   }
 
-  async function handleDeleteLead(id) {
+  async function handleUpdate(leadId) {
+    await fetch(`/api/leads/${leadId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm),
+    });
+    setEditingLead(null);
+    fetchData();
+  }
+
+  async function handleDelete(id) {
     if (!confirm('Удалить этот лид?')) return;
     await fetch(`/api/leads/${id}`, { method: 'DELETE' });
     fetchData();
+  }
+
+  function startEdit(lead) {
+    setEditingLead(lead.id);
+    setEditForm({
+      name: lead.name,
+      contactMethod: lead.contactMethod,
+      projectDescription: lead.projectDescription,
+      budget: lead.budget,
+      status: lead.status,
+      orderCost: lead.orderCost || '',
+      notes: lead.notes || '',
+      agentId: lead.agentId || '',
+    });
   }
 
   if (loading) {
@@ -68,43 +91,157 @@ export default function AdminLeadsPage() {
     <>
       <div className="page-header">
         <h1>Все лиды</h1>
-        <span className="text-secondary">{leads.length} лидов</span>
+        <button className="btn btn-primary" style={{ width: 'auto' }} onClick={() => setShowCreate(true)}>
+          + Добавить лид
+        </button>
       </div>
+
+      {/* Create Lead Modal */}
+      {showCreate && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false); }}>
+          <div className="modal" style={{ maxWidth: 540 }}>
+            <h2>Добавить лид вручную</h2>
+            {error && <div className="alert alert-error">{error}</div>}
+            <form onSubmit={handleCreate}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="form-group">
+                  <label>Имя *</label>
+                  <input className="form-input" placeholder="Иван Петров" value={createForm.name}
+                    onChange={e => setCreateForm({ ...createForm, name: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label>Контакт</label>
+                  <input className="form-input" placeholder="+7 999 123-45-67" value={createForm.contactMethod}
+                    onChange={e => setCreateForm({ ...createForm, contactMethod: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Описание проекта</label>
+                <textarea className="form-input" rows={2} placeholder="Что нужно клиенту..." value={createForm.projectDescription}
+                  onChange={e => setCreateForm({ ...createForm, projectDescription: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="form-group">
+                  <label>Бюджет</label>
+                  <input className="form-input" placeholder="100 000 ₽" value={createForm.budget}
+                    onChange={e => setCreateForm({ ...createForm, budget: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Статус</label>
+                  <select className="form-input" value={createForm.status}
+                    onChange={e => setCreateForm({ ...createForm, status: e.target.value })}>
+                    {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Привязать к агенту</label>
+                <select className="form-input" value={createForm.agentId}
+                  onChange={e => setCreateForm({ ...createForm, agentId: e.target.value })}>
+                  <option value="">Без агента</option>
+                  {agents.map(a => <option key={a.id} value={a.id}>{a.name} ({a.agentCode})</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Заметки</label>
+                <textarea className="form-input" rows={2} placeholder="Внутренние заметки..." value={createForm.notes}
+                  onChange={e => setCreateForm({ ...createForm, notes: e.target.value })} />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>Отмена</button>
+                <button type="submit" className="btn btn-primary" style={{ width: 'auto' }}>Создать</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Lead Modal */}
+      {editingLead && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setEditingLead(null); }}>
+          <div className="modal" style={{ maxWidth: 540 }}>
+            <h2>Редактировать лид #{editingLead}</h2>
+            <form onSubmit={(e) => { e.preventDefault(); handleUpdate(editingLead); }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="form-group">
+                  <label>Имя</label>
+                  <input className="form-input" value={editForm.name}
+                    onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Контакт</label>
+                  <input className="form-input" value={editForm.contactMethod}
+                    onChange={e => setEditForm({ ...editForm, contactMethod: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Описание проекта</label>
+                <textarea className="form-input" rows={2} value={editForm.projectDescription}
+                  onChange={e => setEditForm({ ...editForm, projectDescription: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="form-group">
+                  <label>Бюджет</label>
+                  <input className="form-input" value={editForm.budget}
+                    onChange={e => setEditForm({ ...editForm, budget: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Стоимость заказа (₽)</label>
+                  <input className="form-input" type="number" placeholder="0" value={editForm.orderCost}
+                    onChange={e => setEditForm({ ...editForm, orderCost: e.target.value ? parseFloat(e.target.value) : null })} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="form-group">
+                  <label>Статус</label>
+                  <select className="form-input" value={editForm.status}
+                    onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
+                    {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Агент</label>
+                  <select className="form-input" value={editForm.agentId}
+                    onChange={e => setEditForm({ ...editForm, agentId: e.target.value ? parseInt(e.target.value) : null })}>
+                    <option value="">Без агента</option>
+                    {agents.map(a => <option key={a.id} value={a.id}>{a.name} ({a.agentCode})</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Заметки</label>
+                <textarea className="form-input" rows={2} value={editForm.notes}
+                  onChange={e => setEditForm({ ...editForm, notes: e.target.value })} />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setEditingLead(null)}>Отмена</button>
+                <button type="submit" className="btn btn-primary" style={{ width: 'auto' }}>Сохранить</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div className="table-filters">
-          <button className={`filter-btn ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>Все</button>
-          {ALL_STATUSES.map(s => (
-            <button key={s} className={`filter-btn ${filter === s ? 'active' : ''}`} onClick={() => setFilter(s)}>
-              {STATUS_LABELS[s]}
-            </button>
-          ))}
-        </div>
-        <select
-          className="form-input"
-          style={{ width: 200, padding: '6px 12px', fontSize: 13 }}
-          value={agentFilter}
-          onChange={e => setAgentFilter(e.target.value)}
-        >
-          <option value="">Все агенты</option>
-          {agents.map(a => (
-            <option key={a.id} value={a.id}>{a.name} ({a.agentCode})</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Table */}
       <div className="table-container">
+        <div className="table-header">
+          <h3>{leads.length} лидов</h3>
+          <div className="table-filters">
+            <button className={`filter-btn ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>Все</button>
+            {ALL_STATUSES.map(s => (
+              <button key={s} className={`filter-btn ${filter === s ? 'active' : ''}`} onClick={() => setFilter(s)}>
+                {STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        </div>
         <table>
           <thead>
             <tr>
-              <th>ID</th>
               <th>Имя</th>
-              <th>Связь</th>
+              <th>Контакт</th>
               <th>Проект</th>
               <th>Бюджет</th>
-              <th>Стоимость</th>
               <th>Агент</th>
               <th>Статус</th>
               <th>Дата</th>
@@ -114,48 +251,32 @@ export default function AdminLeadsPage() {
           <tbody>
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Нет лидов</td>
+                <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                  Нет лидов
+                </td>
               </tr>
             ) : (
               leads.map(lead => (
                 <tr key={lead.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>#{lead.id}</td>
                   <td style={{ fontWeight: 600 }}>{lead.name}</td>
-                  <td>{lead.contactMethod}</td>
-                  <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.contactMethod || '—'}</td>
+                  <td style={{ fontSize: 12, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {lead.projectDescription || '—'}
                   </td>
                   <td>{lead.budget || '—'}</td>
-                  <td style={{ fontWeight: 600, color: lead.orderCost ? 'var(--success)' : 'var(--text-muted)' }}>
-                    {lead.orderCost ? `${lead.orderCost.toLocaleString('ru-RU')} ₽` : '—'}
+                  <td style={{ fontSize: 12 }}>
+                    {lead.agent ? `${lead.agent.name} (${lead.agent.agentCode})` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                   </td>
                   <td>
-                    {lead.agent ? (
-                      <span style={{ fontSize: 12 }}>{lead.agent.name} <span style={{ color: 'var(--text-muted)' }}>({lead.agent.agentCode})</span></span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>—</span>
-                    )}
+                    <span className={`badge badge-${lead.status.toLowerCase()}`}>{STATUS_LABELS[lead.status]}</span>
                   </td>
-                  <td><span className={`badge badge-${lead.status.toLowerCase()}`}>{STATUS_LABELS[lead.status]}</span></td>
                   <td style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: 12 }}>
                     {new Date(lead.createdAt).toLocaleDateString('ru-RU')}
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        className="btn btn-sm btn-outline"
-                        onClick={() => setEditLead({
-                          id: lead.id,
-                          status: lead.status,
-                          orderCost: lead.orderCost || '',
-                          notes: lead.notes || '',
-                          agentId: lead.agentId || '',
-                          name: lead.name,
-                        })}
-                      >
-                        ✏️
-                      </button>
-                      <button className="btn btn-sm btn-danger" onClick={() => handleDeleteLead(lead.id)}>🗑</button>
+                      <button className="btn btn-sm btn-outline" onClick={() => startEdit(lead)}>✏️</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(lead.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -164,69 +285,6 @@ export default function AdminLeadsPage() {
           </tbody>
         </table>
       </div>
-
-      {/* Edit Modal */}
-      {editLead && (
-        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setEditLead(null); }}>
-          <div className="modal">
-            <h2>Редактировать лид #{editLead.id}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>{editLead.name}</p>
-
-            <div className="form-group">
-              <label>Статус</label>
-              <select
-                className="form-input"
-                value={editLead.status}
-                onChange={e => setEditLead({ ...editLead, status: e.target.value })}
-              >
-                {ALL_STATUSES.map(s => (
-                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Стоимость заказа (₽)</label>
-              <input
-                type="number"
-                className="form-input"
-                placeholder="Например: 150000"
-                value={editLead.orderCost}
-                onChange={e => setEditLead({ ...editLead, orderCost: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Переназначить агенту</label>
-              <select
-                className="form-input"
-                value={editLead.agentId}
-                onChange={e => setEditLead({ ...editLead, agentId: e.target.value })}
-              >
-                <option value="">Без агента</option>
-                {agents.map(a => (
-                  <option key={a.id} value={a.id}>{a.name} ({a.agentCode})</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Заметки</label>
-              <textarea
-                className="form-input"
-                value={editLead.notes}
-                onChange={e => setEditLead({ ...editLead, notes: e.target.value })}
-                placeholder="Внутренние заметки..."
-              />
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn btn-outline" onClick={() => setEditLead(null)}>Отмена</button>
-              <button className="btn btn-primary" style={{ width: 'auto' }} onClick={handleUpdateLead}>Сохранить</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

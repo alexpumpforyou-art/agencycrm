@@ -504,10 +504,11 @@ tr:hover td {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 40px 20px;
+  overflow-y: auto;
 }
 
 .modal {
@@ -518,6 +519,7 @@ tr:hover td {
   width: 100%;
   max-width: 480px;
   box-shadow: var(--shadow-lg);
+  margin: auto;
 }
 
 .modal h2 {

@@ -39,3 +39,41 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
   }
 }
+
+// POST /api/leads — ручное создание лида (только админ)
+export async function POST(request) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { name, contactMethod, projectDescription, budget, agentId, status, notes } = body;
+
+    if (!name) {
+      return NextResponse.json({ error: 'Имя обязательно' }, { status: 400 });
+    }
+
+    const lead = await prisma.lead.create({
+      data: {
+        name,
+        contactMethod: contactMethod || '',
+        projectDescription: projectDescription || '',
+        budget: budget || '',
+        source: 'Ручной ввод',
+        agentId: agentId ? parseInt(agentId) : null,
+        status: status || 'NEW',
+        notes: notes || '',
+      },
+      include: {
+        agent: { select: { id: true, name: true, agentCode: true } },
+      },
+    });
+
+    return NextResponse.json({ lead }, { status: 201 });
+  } catch (error) {
+    console.error('Create lead error:', error);
+    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
+  }
+}
