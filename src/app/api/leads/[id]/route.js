@@ -9,12 +9,13 @@ const AGENT_ALLOWED_TRANSITIONS = {
 };
 
 // PATCH /api/leads/[id] — обновление лида
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
 
-    const leadId = parseInt(params.id);
+    const { id } = await props.params;
+    const leadId = parseInt(id);
     const body = await request.json();
 
     const lead = await prisma.lead.findUnique({ where: { id: leadId } });
@@ -71,14 +72,15 @@ export async function PATCH(request, { params }) {
 }
 
 // DELETE /api/leads/[id] — удаление лида (только админ)
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
   try {
     const session = await getSession();
     if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
 
-    const leadId = parseInt(params.id);
+    const { id } = await props.params;
+    const leadId = parseInt(id);
     await prisma.lead.delete({ where: { id: leadId } });
     return NextResponse.json({ success: true });
   } catch (error) {

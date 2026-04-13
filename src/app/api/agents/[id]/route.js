@@ -3,14 +3,15 @@ import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 
 // PATCH /api/agents/[id] — управление агентом (только админ)
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
   try {
     const session = await getSession();
     if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
 
-    const agentId = parseInt(params.id);
+    const { id } = await props.params;
+    const agentId = parseInt(id);
     const body = await request.json();
     const updateData = {};
 
@@ -41,14 +42,15 @@ export async function PATCH(request, { params }) {
 }
 
 // DELETE /api/agents/[id] — удаление агента (только админ)
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
   try {
     const session = await getSession();
     if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
     }
 
-    const agentId = parseInt(params.id);
+    const { id } = await props.params;
+    const agentId = parseInt(id);
     await prisma.user.delete({ where: { id: agentId } });
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminAgentsPage() {
+  const router = useRouter();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -216,7 +218,17 @@ export default function AdminAgentsPage() {
                     {new Date(agent.createdAt).toLocaleDateString('ru-RU')}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        style={{ width: 'auto' }}
+                        onClick={async () => {
+                          await fetch(`/api/agents/${agent.id}/impersonate`, { method: 'POST' });
+                          router.push('/dashboard');
+                        }}
+                      >
+                        👤 Войти
+                      </button>
                       <button
                         className={`btn btn-sm ${agent.isBlocked ? 'btn-success' : 'btn-outline'}`}
                         onClick={() => handleBlock(agent.id, agent.isBlocked)}
