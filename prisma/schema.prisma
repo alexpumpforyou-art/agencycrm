@@ -34,6 +34,7 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   leads          Lead[]
+  clicks         Click[]
 }
 
 model Lead {
@@ -77,4 +78,16 @@ model LandingPage {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Click {
+  id        Int      @id @default(autoincrement())
+  agentId   Int?
+  agent     User?    @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentCode String
+  ip        String   @default("")
+  userAgent String   @default("")
+  referer   String   @default("")
+  page      String   @default("")
+  createdAt DateTime @default(now())
 }
