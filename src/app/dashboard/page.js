@@ -24,6 +24,10 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '' });
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -68,6 +72,22 @@ export default function DashboardPage() {
     router.replace('/login');
   }
 
+  async function handlePasswordChange(e) {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess('');
+    const res = await fetch('/api/auth/password', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pwForm),
+    });
+    const data = await res.json();
+    if (!res.ok) { setPwError(data.error); return; }
+    setPwSuccess('Пароль изменён!');
+    setPwForm({ currentPassword: '', newPassword: '' });
+    setTimeout(() => { setShowPassword(false); setPwSuccess(''); }, 1500);
+  }
+
   function copyLink() {
     const url = `${window.location.origin}/api/leads/webhook`;
     navigator.clipboard.writeText(url);
@@ -96,6 +116,7 @@ export default function DashboardPage() {
           </button>
         </nav>
         <div className="sidebar-footer">
+          <button className="nav-link" onClick={() => setShowPassword(true)}>🔑 Сменить пароль</button>
           <button className="nav-link" onClick={handleLogout}>🚪 Выйти</button>
         </div>
       </aside>
@@ -231,6 +252,33 @@ export default function DashboardPage() {
           </table>
         </div>
       </main>
+
+      {/* Password Modal */}
+      {showPassword && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowPassword(false); }}>
+          <div className="modal">
+            <h2>Сменить пароль</h2>
+            {pwError && <div className="alert alert-error">{pwError}</div>}
+            {pwSuccess && <div className="alert alert-success">{pwSuccess}</div>}
+            <form onSubmit={handlePasswordChange}>
+              <div className="form-group">
+                <label>Текущий пароль</label>
+                <input type="password" className="form-input" value={pwForm.currentPassword}
+                  onChange={e => setPwForm({ ...pwForm, currentPassword: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Новый пароль</label>
+                <input type="password" className="form-input" placeholder="Минимум 6 символов" value={pwForm.newPassword}
+                  onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })} required minLength={6} />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setShowPassword(false)}>Отмена</button>
+                <button type="submit" className="btn btn-primary" style={{ width: 'auto' }}>Сохранить</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

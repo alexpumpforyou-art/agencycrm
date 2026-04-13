@@ -7,6 +7,10 @@ export default function AdminAgentsPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editRate, setEditRate] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', commissionRate: '10' });
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
 
   const fetchAgents = useCallback(async () => {
     const res = await fetch('/api/agents');
@@ -47,6 +51,29 @@ export default function AdminAgentsPage() {
     fetchAgents();
   }
 
+  async function handleCreateAgent(e) {
+    e.preventDefault();
+    setCreateError('');
+    setCreateSuccess('');
+
+    const res = await fetch('/api/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(createForm),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setCreateError(data.error);
+      return;
+    }
+
+    setCreateSuccess(`Агент создан! Код: ${data.agent.agentCode}`);
+    setCreateForm({ name: '', email: '', password: '', commissionRate: '10' });
+    fetchAgents();
+    setTimeout(() => { setShowCreate(false); setCreateSuccess(''); }, 2000);
+  }
+
   if (loading) {
     return <div style={{ padding: 40, textAlign: 'center' }}><div className="spinner" style={{ width: 32, height: 32, margin: '0 auto' }}></div></div>;
   }
@@ -55,10 +82,78 @@ export default function AdminAgentsPage() {
     <>
       <div className="page-header">
         <h1>Управление агентами</h1>
-        <span className="text-secondary">{agents.length} агентов</span>
+        <button className="btn btn-primary" style={{ width: 'auto' }} onClick={() => setShowCreate(true)}>
+          + Создать агента
+        </button>
       </div>
 
+      {/* Create Agent Modal */}
+      {showCreate && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false); }}>
+          <div className="modal">
+            <h2>Создать агента</h2>
+
+            {createError && <div className="alert alert-error">{createError}</div>}
+            {createSuccess && <div className="alert alert-success">{createSuccess}</div>}
+
+            <form onSubmit={handleCreateAgent}>
+              <div className="form-group">
+                <label>Имя</label>
+                <input
+                  className="form-input"
+                  placeholder="Иван Петров"
+                  value={createForm.name}
+                  onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="agent@example.com"
+                  value={createForm.email}
+                  onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Пароль</label>
+                <input
+                  className="form-input"
+                  type="password"
+                  placeholder="Минимум 6 символов"
+                  value={createForm.password}
+                  onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="form-group">
+                <label>Комиссия (%)</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min={10}
+                  max={30}
+                  value={createForm.commissionRate}
+                  onChange={e => setCreateForm({ ...createForm, commissionRate: e.target.value })}
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>Отмена</button>
+                <button type="submit" className="btn btn-primary" style={{ width: 'auto' }}>Создать</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="table-container">
+        <div className="table-header">
+          <h3>{agents.length} агентов</h3>
+        </div>
         <table>
           <thead>
             <tr>
@@ -76,7 +171,7 @@ export default function AdminAgentsPage() {
             {agents.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                  Пока нет зарегистрированных агентов
+                  Нажмите «Создать агента» чтобы добавить первого
                 </td>
               </tr>
             ) : (

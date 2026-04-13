@@ -84,8 +84,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-secondary text-sm mt-16">
-          Нет аккаунта?{' '}
-          <a href="/register">Зарегистрироваться</a>
+          Аккаунт выдаётся администратором
         </p>
       </div>
     </div>
