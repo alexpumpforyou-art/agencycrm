@@ -36,6 +36,7 @@ export default function AdminLayout({ children }) {
     { href: '/admin', label: '📊 Обзор', exact: true },
     { href: '/admin/agents', label: '👥 Агенты' },
     { href: '/admin/leads', label: '📋 Все лиды' },
+    { href: '/admin/landing-pages', label: '🌐 Посадочные' },
     { href: '/admin/materials', label: '📦 Материалы' },
   ];
 

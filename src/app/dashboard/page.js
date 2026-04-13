@@ -31,14 +31,17 @@ export default function DashboardPage() {
   const [materials, setMaterials] = useState([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [landingPages, setLandingPages] = useState([]);
+  const [copiedLink, setCopiedLink] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [meRes, statsRes, leadsRes, matsRes] = await Promise.all([
+      const [meRes, statsRes, leadsRes, matsRes, pagesRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch('/api/stats'),
         fetch('/api/leads' + (filter ? `?status=${filter}` : '')),
         fetch('/api/materials'),
+        fetch('/api/landing-pages'),
       ]);
 
       const meData = await meRes.json();
@@ -56,6 +59,9 @@ export default function DashboardPage() {
 
       const matsData = await matsRes.json();
       setMaterials(matsData.materials || []);
+
+      const pagesData = await pagesRes.json();
+      setLandingPages(pagesData.pages || []);
 
       // Show onboarding for new agents
       if (!meData.user.onboardingDone) {
@@ -142,14 +148,28 @@ export default function DashboardPage() {
           <h1>Добро пожаловать, {user?.name}!</h1>
         </div>
 
-        {/* Referral Link */}
-        <div className="copy-link-box">
-          <span style={{ fontSize: 14, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>🔗 Ваша ссылка:</span>
-          <input type="text" readOnly value={refLink} />
-          <button onClick={() => { navigator.clipboard.writeText(refLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
-            {copied ? '✓ Скопировано' : 'Копировать'}
-          </button>
-        </div>
+        {/* Referral Links */}
+        {landingPages.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h3 style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 4 }}>🔗 Ваши реферальные ссылки:</h3>
+            {landingPages.map(page => {
+              const link = `${page.url}?a=${user?.agentCode}`;
+              return (
+                <div key={page.id} className="copy-link-box">
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 120 }}>{page.title}:</span>
+                  <input type="text" readOnly value={link} />
+                  <button onClick={() => { navigator.clipboard.writeText(link); setCopiedLink(page.id); setTimeout(() => setCopiedLink(null), 2000); }}>
+                    {copiedLink === page.id ? '✓' : 'Копировать'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="copy-link-box">
+            <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Посадочные страницы ещё не настроены администратором</span>
+          </div>
+        )}
 
         {/* Stats */}
         {stats && (
