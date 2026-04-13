@@ -62,36 +62,45 @@ export default function AdminLandingPagesPage() {
 
   const crmUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-crm.railway.app';
 
-  const embedCode = `<!-- CRM Lead Tracker — вставить перед </head> -->
+  const embedCode = `<!-- CRM Lead Tracker — вставить перед </body> -->
 <script>
 (function(){
-  var params = new URLSearchParams(window.location.search);
-  var code = params.get('a');
-  if(code) {
-    document.cookie = 'agent_code='+code+';path=/;max-age=2592000';
-  }
+  var p = new URLSearchParams(window.location.search);
+  var code = p.get('a');
+  if(code) document.cookie = 'agent_code='+code+';path=/;max-age=2592000';
 })();
-</script>
 
-<!-- Добавить в обработчик отправки формы -->
-<script>
-function sendLeadToCRM(formData) {
-  var code = document.cookie.match(/agent_code=([^;]+)/);
+// Вызовите эту функцию при отправке формы
+// Передайте объект с ЛЮБЫМИ полями вашей формы
+function sendLeadToCRM(data) {
+  var c = document.cookie.match(/agent_code=([^;]+)/);
+  data.agentCode = c ? c[1] : '';
   fetch('${crmUrl}/api/leads/webhook', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      name: formData.name || '',
-      contactMethod: formData.phone || formData.email || '',
-      projectDescription: formData.message || formData.description || '',
-      budget: formData.budget || '',
-      agentCode: code ? code[1] : ''
-    })
+    body: JSON.stringify(data)
   });
 }
-
-// Пример использования: sendLeadToCRM({ name: 'Иван', phone: '+7999...', message: 'Нужен сайт' })
 </script>`;
+
+  const exampleForm = `// Пример для вашей формы (Имя + Email + Ссылка):
+document.querySelector('form').addEventListener('submit', function(e) {
+  sendLeadToCRM({
+    name: document.querySelector('[name="name"]').value,
+    email: document.querySelector('[name="email"]').value,
+    site: document.querySelector('[name="site"]').value
+  });
+});`;
+
+  const fieldsTable = `Поддерживаемые поля (все необязательные, нужно минимум 1):
+
+  name, имя, fullname   → Имя клиента
+  email, почта           → Контакт (email)
+  phone, tel, телефон    → Контакт (телефон)
+  site, website, url     → Описание / ссылка на сайт
+  message, description   → Описание проекта
+  budget, бюджет         → Бюджет
+  agentCode              → Код агента (ставится автоматически)`;
 
   if (loading) {
     return <div style={{ padding: 40, textAlign: 'center' }}><div className="spinner" style={{ width: 32, height: 32, margin: '0 auto' }}></div></div>;
@@ -114,58 +123,45 @@ function sendLeadToCRM(formData) {
       {/* Integration Instructions Modal */}
       {showIntegration && (
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowIntegration(false); }}>
-          <div className="modal" style={{ maxWidth: 680 }}>
+          <div className="modal" style={{ maxWidth: 700 }}>
             <h2>📋 Инструкция по интеграции</h2>
             <div style={{ marginTop: 16 }}>
-              <h3 style={{ fontSize: 14, marginBottom: 8, color: 'var(--info)' }}>Шаг 1: Вставьте код на сайт</h3>
+
+              <h3 style={{ fontSize: 14, marginBottom: 8, color: 'var(--info)' }}>Шаг 1: Вставьте код на сайт (перед &lt;/body&gt;)</h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Скопируйте код ниже и вставьте на все посадочные страницы вашего сайта. 
-                Код сохраняет код агента из URL (<code>?a=XXXXX</code>) в cookie на 30 дней.
+                Этот скрипт делает 2 вещи: сохраняет код агента из URL в cookie и предоставляет функцию <code>sendLeadToCRM()</code>.
               </p>
               <div style={{ position: 'relative' }}>
                 <pre style={{
-                  backgroundColor: 'var(--bg-tertiary)',
-                  padding: 16,
-                  borderRadius: 8,
-                  fontSize: 12,
-                  overflow: 'auto',
-                  maxHeight: 400,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
+                  backgroundColor: 'var(--bg-tertiary)', padding: 16, borderRadius: 8,
+                  fontSize: 12, overflow: 'auto', maxHeight: 300, whiteSpace: 'pre-wrap', wordBreak: 'break-all',
                 }}>{embedCode}</pre>
-                <button
-                  className="btn btn-sm btn-primary"
+                <button className="btn btn-sm btn-primary"
                   style={{ position: 'absolute', top: 8, right: 8, width: 'auto' }}
-                  onClick={() => { navigator.clipboard.writeText(embedCode); }}
-                >
+                  onClick={() => navigator.clipboard.writeText(embedCode)}>
                   Скопировать
                 </button>
               </div>
 
-              <h3 style={{ fontSize: 14, marginBottom: 8, marginTop: 20, color: 'var(--info)' }}>Шаг 2: Подключите к вашей форме</h3>
+              <h3 style={{ fontSize: 14, marginBottom: 8, marginTop: 20, color: 'var(--info)' }}>Шаг 2: Вызовите при отправке формы</h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                В обработчике отправки формы вызовите <code>sendLeadToCRM()</code> с данными клиента:
+                Передайте <b>любые поля</b> вашей формы — CRM сама разберётся:
               </p>
               <pre style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                padding: 16,
-                borderRadius: 8,
-                fontSize: 12,
-                overflow: 'auto',
-              }}>{`// В обработчике submit формы:
-sendLeadToCRM({
-  name: document.getElementById('name').value,
-  phone: document.getElementById('phone').value,
-  message: document.getElementById('message').value,
-  budget: document.getElementById('budget')?.value || ''
-});`}</pre>
+                backgroundColor: 'var(--bg-tertiary)', padding: 16, borderRadius: 8, fontSize: 12, overflow: 'auto',
+              }}>{exampleForm}</pre>
 
-              <h3 style={{ fontSize: 14, marginBottom: 8, marginTop: 20, color: 'var(--info)' }}>Шаг 3: Как это работает</h3>
+              <h3 style={{ fontSize: 14, marginBottom: 8, marginTop: 20, color: 'var(--info)' }}>Принимаемые поля</h3>
+              <pre style={{
+                backgroundColor: 'var(--bg-tertiary)', padding: 16, borderRadius: 8, fontSize: 12, overflow: 'auto',
+              }}>{fieldsTable}</pre>
+
+              <h3 style={{ fontSize: 14, marginBottom: 8, marginTop: 20, color: 'var(--info)' }}>Как это работает</h3>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                 <p>1. Агент делится ссылкой: <code>https://ваш-сайт.ru?a=56290</code></p>
                 <p>2. Клиент переходит → код <b>56290</b> сохраняется в cookie на 30 дней</p>
-                <p>3. Клиент заполняет форму → данные + код агента отправляются в CRM</p>
-                <p>4. Лид автоматически привязывается к агенту в системе</p>
+                <p>3. Даже если клиент вернётся позже без <code>?a=</code> — cookie всё ещё хранит код</p>
+                <p>4. Клиент заполняет форму → данные + код агента → CRM → Telegram</p>
               </div>
             </div>
 
