@@ -29,6 +29,7 @@ model User {
   agentCode      String   @unique
   commissionRate Float    @default(10.0)
   isBlocked      Boolean  @default(false)
+  onboardingDone Boolean  @default(false)
   telegramChatId String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -50,3 +51,21 @@ model Lead {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 }
+
+enum MaterialCategory {
+  CASE
+  PORTFOLIO
+  PROMO
+  GUIDE
+  OTHER
+}
+
+model Material {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String           @default("")
+  url         String
+  category    MaterialCategory @default(OTHER)
+  createdAt   DateTime         @default(now())
+}
+

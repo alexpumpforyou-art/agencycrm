@@ -28,13 +28,17 @@ export default function DashboardPage() {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '' });
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
+  const [materials, setMaterials] = useState([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
-      const [meRes, statsRes, leadsRes] = await Promise.all([
+      const [meRes, statsRes, leadsRes, matsRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch('/api/stats'),
         fetch('/api/leads' + (filter ? `?status=${filter}` : '')),
+        fetch('/api/materials'),
       ]);
 
       const meData = await meRes.json();
@@ -49,6 +53,14 @@ export default function DashboardPage() {
 
       const leadsData = await leadsRes.json();
       setLeads(leadsData.leads || []);
+
+      const matsData = await matsRes.json();
+      setMaterials(matsData.materials || []);
+
+      // Show onboarding for new agents
+      if (!meData.user.onboardingDone) {
+        setShowOnboarding(true);
+      }
     } catch {
       router.replace('/login');
     } finally {
@@ -113,6 +125,9 @@ export default function DashboardPage() {
           <button className="nav-link active">📊 Дашборд</button>
           <button className="nav-link" onClick={() => document.getElementById('leads-section')?.scrollIntoView({ behavior: 'smooth' })}>
             📋 Мои лиды
+          </button>
+          <button className="nav-link" onClick={() => document.getElementById('materials-section')?.scrollIntoView({ behavior: 'smooth' })}>
+            📦 Материалы
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -251,7 +266,105 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Materials Section */}
+        <div id="materials-section" className="table-container" style={{ marginTop: 32 }}>
+          <div className="table-header">
+            <h3>📦 Материалы для работы ({materials.length})</h3>
+          </div>
+          <div style={{ padding: 16 }}>
+            {materials.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>Материалов пока нет</p>
+            ) : (
+              <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', margin: 0 }}>
+                {materials.map(m => (
+                  <div key={m.id} className="stat-card">
+                    <span className="badge badge-negotiations" style={{ marginBottom: 8 }}>
+                      {m.category === 'CASE' ? '📂 Кейс' : m.category === 'PORTFOLIO' ? '🎨 Портфолио' : m.category === 'PROMO' ? '📣 Промо' : m.category === 'GUIDE' ? '📖 Гайд' : '📎 Другое'}
+                    </span>
+                    <h4 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{m.title}</h4>
+                    {m.description && <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 10 }}>{m.description}</p>}
+                    <a href={m.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">🔗 Открыть</a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </main>
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 520 }}>
+            {onboardingStep === 0 && (
+              <>
+                <div style={{ textAlign: 'center', fontSize: 48, marginBottom: 16 }}>👋</div>
+                <h2 style={{ textAlign: 'center' }}>Добро пожаловать в CRM!</h2>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 8, marginBottom: 24 }}>
+                  Краткое знакомство с системой — займёт 30 секунд
+                </p>
+              </>
+            )}
+            {onboardingStep === 1 && (
+              <>
+                <div style={{ textAlign: 'center', fontSize: 48, marginBottom: 16 }}>🔗</div>
+                <h2 style={{ textAlign: 'center' }}>Реферальная ссылка</h2>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 8, marginBottom: 24 }}>
+                  Наверху дашборда — ваша уникальная ссылка. Отправляйте её клиентам. Когда клиент заполнит форму на нашем сайте — лид автоматически привяжется к вам.
+                </p>
+              </>
+            )}
+            {onboardingStep === 2 && (
+              <>
+                <div style={{ textAlign: 'center', fontSize: 48, marginBottom: 16 }}>📊</div>
+                <h2 style={{ textAlign: 'center' }}>Статусы лидов</h2>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 8, marginBottom: 12 }}>
+                  Каждый лид проходит через воронку:
+                </p>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+                  <span className="badge badge-new">Новый</span>
+                  <span>→</span>
+                  <span className="badge badge-negotiations">Переговоры</span>
+                  <span>→</span>
+                  <span className="badge badge-in_progress">В работе</span>
+                  <span>→</span>
+                  <span className="badge badge-deal_closed">Сделка</span>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', fontSize: 13 }}>
+                  Вы можете перевести лид в «Переговоры» или «Отказ». Остальные статусы ставит администратор.
+                </p>
+              </>
+            )}
+            {onboardingStep === 3 && (
+              <>
+                <div style={{ textAlign: 'center', fontSize: 48, marginBottom: 16 }}>💰</div>
+                <h2 style={{ textAlign: 'center' }}>Вознаграждение</h2>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 8, marginBottom: 24 }}>
+                  Вы получаете комиссию от каждой закрытой сделки. Сумма отображается на дашборде. В разделе «Материалы» — кейсы и промо для работы с клиентами.
+                </p>
+              </>
+            )}
+            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+              {onboardingStep > 0 && (
+                <button className="btn btn-outline" onClick={() => setOnboardingStep(s => s - 1)}>← Назад</button>
+              )}
+              {onboardingStep < 3 ? (
+                <button className="btn btn-primary" style={{ width: 'auto' }} onClick={() => setOnboardingStep(s => s + 1)}>
+                  Далее →
+                </button>
+              ) : (
+                <button className="btn btn-primary" style={{ width: 'auto' }} onClick={async () => {
+                  await fetch('/api/auth/onboarding', { method: 'PATCH' });
+                  setShowOnboarding(false);
+                }}>
+                  Начать работу! 🚀
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Password Modal */}
       {showPassword && (
