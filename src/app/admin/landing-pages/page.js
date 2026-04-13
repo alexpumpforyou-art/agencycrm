@@ -67,11 +67,17 @@ export default function AdminLandingPagesPage() {
 (function(){
   var p = new URLSearchParams(window.location.search);
   var code = p.get('a');
-  if(code) document.cookie = 'agent_code='+code+';path=/;max-age=2592000';
+  if(code) {
+    document.cookie = 'agent_code='+code+';path=/;max-age=2592000';
+    // Трекинг клика
+    fetch('${crmUrl}/api/clicks', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ agentCode: code, page: location.href })
+    });
+  }
 })();
 
-// Вызовите эту функцию при отправке формы
-// Передайте объект с ЛЮБЫМИ полями вашей формы
 function sendLeadToCRM(data) {
   var c = document.cookie.match(/agent_code=([^;]+)/);
   data.agentCode = c ? c[1] : '';
