@@ -68,9 +68,9 @@ export async function POST(request) {
       },
     });
 
-    // Telegram уведомление
+    // Telegram уведомление (не блокируем ответ клиенту)
     const code = agent?.agentCode || 'нет агента';
-    await sendTelegramNotification(formatNewLeadMessage(lead, code));
+    sendTelegramNotification(formatNewLeadMessage(lead, code)).catch(console.error);
 
     return NextResponse.json({ success: true, leadId: lead.id }, { status: 201 });
   } catch (error) {
