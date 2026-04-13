@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  AGENT
+  ADMIN
+}
+
+enum LeadStatus {
+  NEW
+  NEGOTIATIONS
+  IN_PROGRESS
+  DEAL_CLOSED
+  REJECTED
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           Role     @default(AGENT)
+  agentCode      String   @unique
+  commissionRate Float    @default(10.0)
+  isBlocked      Boolean  @default(false)
+  telegramChatId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  leads          Lead[]
+}
+
+model Lead {
+  id                 Int        @id @default(autoincrement())
+  name               String
+  contactMethod      String
+  source             String     @default("")
+  projectDescription String     @default("")
+  budget             String     @default("")
+  orderCost          Float?
+  status             LeadStatus @default(NEW)
+  agentId            Int?
+  agent              User?      @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  notes              String     @default("")
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
