@@ -40,6 +40,11 @@ export default function AdminDashboard() {
           <div className="stat-value">{stats.totalLeads}</div>
           <div className="stat-label">Всего лидов</div>
         </div>
+        <div className="stat-card accent">
+          <div className="stat-icon">👆</div>
+          <div className="stat-value">{stats.totalClicks || 0}</div>
+          <div className="stat-label">Кликов</div>
+        </div>
         <div className="stat-card warning">
           <div className="stat-icon">💬</div>
           <div className="stat-value">{stats.statusMap?.NEGOTIATIONS || 0}</div>
@@ -116,9 +121,10 @@ export default function AdminDashboard() {
                 <th>#</th>
                 <th>Агент</th>
                 <th>Код</th>
+                <th>Клики</th>
                 <th>Лидов</th>
+                <th>CR%</th>
                 <th>Выручка</th>
-                <th>Комиссия</th>
                 <th>Заработок</th>
               </tr>
             </thead>
@@ -130,9 +136,12 @@ export default function AdminDashboard() {
                   </td>
                   <td style={{ fontWeight: 600 }}>{agent.name}</td>
                   <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{agent.agentCode}</td>
+                  <td>{agent._count?.clicks || 0}</td>
                   <td>{agent._count?.leads || 0}</td>
+                  <td style={{ color: 'var(--info)' }}>
+                    {agent._count?.clicks > 0 ? Math.round((agent._count.leads / agent._count.clicks) * 100) : 0}%
+                  </td>
                   <td>{(agent.totalRevenue || 0).toLocaleString('ru-RU')} ₽</td>
-                  <td>{agent.commissionRate}%</td>
                   <td style={{ color: 'var(--success)', fontWeight: 600 }}>
                     {(agent.earnings || 0).toLocaleString('ru-RU')} ₽
                   </td>

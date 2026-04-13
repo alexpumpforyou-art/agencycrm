@@ -179,6 +179,11 @@ export default function DashboardPage() {
               <div className="stat-value">{stats.totalLeads}</div>
               <div className="stat-label">Всего лидов</div>
             </div>
+            <div className="stat-card accent">
+              <div className="stat-icon">👆</div>
+              <div className="stat-value">{stats.totalClicks || 0}</div>
+              <div className="stat-label">Кликов по ссылке</div>
+            </div>
             <div className="stat-card warning">
               <div className="stat-icon">💬</div>
               <div className="stat-value">{stats.statusMap?.NEGOTIATIONS || 0}</div>
