@@ -14,6 +14,10 @@ export async function GET() {
     // Общее количество лидов
     const totalLeads = await prisma.lead.count({ where: whereAgent });
 
+    // Клики
+    const whereClicks = isAdmin ? {} : { agentId: session.id };
+    const totalClicks = await prisma.click.count({ where: whereClicks });
+
     // По статусам
     const byStatus = await prisma.lead.groupBy({
       by: ['status'],
@@ -49,7 +53,7 @@ export async function GET() {
         where: { role: 'AGENT' },
         select: {
           id: true, name: true, agentCode: true, commissionRate: true,
-          _count: { select: { leads: true } },
+          _count: { select: { leads: true, clicks: true } },
         },
         orderBy: { leads: { _count: 'desc' } },
         take: 10,
@@ -107,6 +111,7 @@ export async function GET() {
 
     return NextResponse.json({
       totalLeads,
+      totalClicks,
       statusMap,
       closedDeals: closedDeals._count,
       closedSum: closedDeals._sum.orderCost || 0,
