@@ -51,6 +51,10 @@ model Lead {
   notes              String     @default("")
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
+
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 enum MaterialCategory {
@@ -90,4 +94,8 @@ model Click {
   referer   String   @default("")
   page      String   @default("")
   createdAt DateTime @default(now())
+
+  @@index([agentId])
+  @@index([agentCode])
+  @@index([createdAt])
 }
