@@ -35,12 +35,13 @@ export default function DashboardPage() {
   const [copiedLink, setCopiedLink] = useState(null);
   const [viewingLead, setViewingLead] = useState(null);
   const [agentNotes, setAgentNotes] = useState('');
+  const [chartPeriod, setChartPeriod] = useState('7');
 
   const fetchData = useCallback(async () => {
     try {
       const [meRes, statsRes, leadsRes, matsRes, pagesRes] = await Promise.all([
         fetch('/api/auth/me'),
-        fetch('/api/stats'),
+        fetch(`/api/stats?period=${chartPeriod}`),
         fetch('/api/leads' + (filter ? `?status=${filter}` : '')),
         fetch('/api/materials'),
         fetch('/api/landing-pages'),
@@ -74,7 +75,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, router]);
+  }, [filter, chartPeriod, router]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -207,17 +208,27 @@ export default function DashboardPage() {
         {/* Chart */}
         {stats?.dailyLeads && (
           <div className="chart-container">
-            <h3>Лиды за 7 дней</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Аналитика лидов</h3>
+              <div className="table-filters" style={{ margin: 0 }}>
+                <button className={`filter-btn ${chartPeriod === '7' ? 'active' : ''}`} onClick={() => setChartPeriod('7')}>7 дней</button>
+                <button className={`filter-btn ${chartPeriod === '30' ? 'active' : ''}`} onClick={() => setChartPeriod('30')}>30 дней</button>
+                <button className={`filter-btn ${chartPeriod === 'all' ? 'active' : ''}`} onClick={() => setChartPeriod('all')}>Всё время</button>
+              </div>
+            </div>
             <div className="chart-bars">
               {Object.entries(stats.dailyLeads).map(([date, count]) => {
                 const max = Math.max(...Object.values(stats.dailyLeads), 1);
                 const h = Math.max((count / max) * 140, 4);
-                const day = new Date(date).toLocaleDateString('ru-RU', { weekday: 'short' });
+                let label = new Date(date).toLocaleDateString('ru-RU', { weekday: 'short' });
+                if (chartPeriod === '30') label = new Date(date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'numeric' });
+                if (chartPeriod === 'all') label = date; // YYYY-MM
+                
                 return (
                   <div key={date} className="chart-bar-group">
                     <div className="chart-bar-value">{count}</div>
                     <div className="chart-bar" style={{ height: h }}></div>
-                    <div className="chart-bar-label">{day}</div>
+                    <div className="chart-bar-label" style={chartPeriod === '30' || chartPeriod === 'all' ? { fontSize: 10, transform: 'rotate(-45deg)' } : {}}>{label}</div>
                   </div>
                 );
               })}

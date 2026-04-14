@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 
 // GET /api/stats — статистика
-export async function GET() {
+export async function GET(request) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
@@ -70,26 +70,44 @@ export async function GET() {
       }
     }
 
-    // Лиды за последние 7 дней (по дням)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Данные для графика
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || '7';
+    let chartData = {};
 
-    const recentLeads = await prisma.lead.findMany({
-      where: { ...whereAgent, createdAt: { gte: sevenDaysAgo } },
-      select: { createdAt: true },
-    });
+    if (period === 'all') {
+      const allLeadsDates = await prisma.lead.findMany({
+        where: whereAgent,
+        select: { createdAt: true },
+      });
+      allLeadsDates.forEach(l => {
+        const key = l.createdAt.toISOString().substring(0, 7); // YYYY-MM
+        chartData[key] = (chartData[key] || 0) + 1;
+      });
+      // Sort months
+      chartData = Object.fromEntries(Object.entries(chartData).sort());
+    } else {
+      const daysStr = parseInt(period) === 30 ? 30 : 7;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysStr + 1);
+      startDate.setHours(0, 0, 0, 0);
 
-    const dailyLeads = {};
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      dailyLeads[key] = 0;
+      const recentLeads = await prisma.lead.findMany({
+        where: { ...whereAgent, createdAt: { gte: startDate } },
+        select: { createdAt: true },
+      });
+
+      for (let i = daysStr - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        chartData[key] = 0;
+      }
+      recentLeads.forEach(l => {
+        const key = l.createdAt.toISOString().split('T')[0];
+        if (chartData[key] !== undefined) chartData[key]++;
+      });
     }
-    recentLeads.forEach(l => {
-      const key = l.createdAt.toISOString().split('T')[0];
-      if (dailyLeads[key] !== undefined) dailyLeads[key]++;
-    });
 
     // Общая выручка и комиссии (для админа)
     let totalRevenue = 0;
@@ -117,7 +135,7 @@ export async function GET() {
       closedSum: closedDeals._sum.orderCost || 0,
       earnings,
       topAgents: isAdmin ? topAgents : undefined,
-      dailyLeads,
+      dailyLeads: chartData, // Возвращаем под старым ключом для обратной совместимости
       totalRevenue: isAdmin ? totalRevenue : undefined,
       totalCommissions: isAdmin ? totalCommissions : undefined,
     });
