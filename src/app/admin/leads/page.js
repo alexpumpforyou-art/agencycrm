@@ -17,6 +17,8 @@ export default function AdminLeadsPage() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [agentFilter, setAgentFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
   const [createForm, setCreateForm] = useState({
@@ -82,6 +84,15 @@ export default function AdminLeadsPage() {
       agentId: lead.agentId || '',
     });
   }
+
+  const filteredLeads = leads.filter(lead => {
+    const q = search.toLowerCase();
+    if (q && !lead.name.toLowerCase().includes(q) && !(lead.contactMethod || '').toLowerCase().includes(q)
+      && !(lead.projectDescription || '').toLowerCase().includes(q)) return false;
+    if (agentFilter === 'none' && lead.agentId) return false;
+    if (agentFilter && agentFilter !== 'none' && lead.agentId !== parseInt(agentFilter)) return false;
+    return true;
+  });
 
   if (loading) {
     return <div style={{ padding: 40, textAlign: 'center' }}><div className="spinner" style={{ width: 32, height: 32, margin: '0 auto' }}></div></div>;
@@ -225,7 +236,7 @@ export default function AdminLeadsPage() {
       {/* Filters */}
       <div className="table-container">
         <div className="table-header">
-          <h3>{leads.length} лидов</h3>
+      <h3>{filteredLeads.length} лидов</h3>
           <div className="table-filters">
             <button className={`filter-btn ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>Все</button>
             {ALL_STATUSES.map(s => (
@@ -234,6 +245,25 @@ export default function AdminLeadsPage() {
               </button>
             ))}
           </div>
+        </div>
+        <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <input
+            className="form-input"
+            style={{ maxWidth: 260, padding: '8px 14px', fontSize: 13 }}
+            placeholder="🔍 Поиск по имени, контакту..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <select
+            className="form-input"
+            style={{ maxWidth: 200, padding: '8px 14px', fontSize: 13 }}
+            value={agentFilter}
+            onChange={e => setAgentFilter(e.target.value)}
+          >
+            <option value="">Все агенты</option>
+            <option value="none">Без агента</option>
+            {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
         </div>
         <table>
           <thead>
@@ -249,14 +279,14 @@ export default function AdminLeadsPage() {
             </tr>
           </thead>
           <tbody>
-            {leads.length === 0 ? (
+            {filteredLeads.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                   Нет лидов
                 </td>
               </tr>
             ) : (
-              leads.map(lead => (
+              filteredLeads.map(lead => (
                 <tr key={lead.id}>
                   <td style={{ fontWeight: 600 }}>{lead.name}</td>
                   <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.contactMethod || '—'}</td>
