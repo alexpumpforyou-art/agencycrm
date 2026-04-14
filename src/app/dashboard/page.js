@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [landingPages, setLandingPages] = useState([]);
   const [copiedLink, setCopiedLink] = useState(null);
+  const [viewingLead, setViewingLead] = useState(null);
+  const [agentNotes, setAgentNotes] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -223,6 +225,67 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Lead Detail Modal */}
+        {viewingLead && (
+          <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setViewingLead(null); }}>
+            <div className="modal" style={{ maxWidth: 520 }}>
+              <h2>Лид: {viewingLead.name}</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Контакт</label>
+                  <p style={{ fontSize: 14 }}>{viewingLead.contactMethod || '—'}</p>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Описание проекта</label>
+                  <p style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{viewingLead.projectDescription || '—'}</p>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Бюджет</label>
+                    <p style={{ fontSize: 14 }}>{viewingLead.budget || '—'}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Статус</label>
+                    <p><span className={`badge badge-${viewingLead.status.toLowerCase()}`}>{STATUS_LABELS[viewingLead.status]}</span></p>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Источник</label>
+                    <p style={{ fontSize: 14 }}>{viewingLead.source || '—'}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Дата</label>
+                    <p style={{ fontSize: 14 }}>{new Date(viewingLead.createdAt).toLocaleString('ru-RU')}</p>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>Мои заметки</label>
+                  <textarea
+                    className="form-input"
+                    rows={3}
+                    placeholder="Записать заметку по лиду..."
+                    value={agentNotes}
+                    onChange={(e) => setAgentNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-outline" onClick={() => setViewingLead(null)}>Закрыть</button>
+                <button className="btn btn-primary" style={{ width: 'auto' }} onClick={async () => {
+                  await fetch(`/api/leads/${viewingLead.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes: agentNotes }),
+                  });
+                  setViewingLead(null);
+                  fetchData();
+                }}>Сохранить заметки</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Leads Table */}
         <div id="leads-section" className="table-container">
           <div className="table-header">
@@ -270,19 +333,25 @@ export default function DashboardPage() {
                         {new Date(lead.createdAt).toLocaleDateString('ru-RU')}
                       </td>
                       <td>
-                        {transitions.length > 0 && (
-                          <select
-                            className="form-input"
-                            style={{ padding: '6px 10px', fontSize: 12, width: 'auto', minWidth: 130 }}
-                            value=""
-                            onChange={(e) => { if (e.target.value) handleStatusChange(lead.id, e.target.value); }}
-                          >
-                            <option value="">Изменить...</option>
-                            {transitions.map(s => (
-                              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                            ))}
-                          </select>
-                        )}
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <button className="btn btn-sm btn-outline"
+                            onClick={() => { setViewingLead(lead); setAgentNotes(lead.notes || ''); }}>
+                            👁
+                          </button>
+                          {transitions.length > 0 && (
+                            <select
+                              className="form-input"
+                              style={{ padding: '6px 10px', fontSize: 12, width: 'auto', minWidth: 130 }}
+                              value=""
+                              onChange={(e) => { if (e.target.value) handleStatusChange(lead.id, e.target.value); }}
+                            >
+                              <option value="">Изменить...</option>
+                              {transitions.map(s => (
+                                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

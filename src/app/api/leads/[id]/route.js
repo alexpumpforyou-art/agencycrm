@@ -35,9 +35,13 @@ export async function PATCH(request, props) {
         }
       }
 
+      const agentData = {};
+      if (body.status) agentData.status = body.status;
+      if (body.notes !== undefined) agentData.notes = body.notes;
+
       const updated = await prisma.lead.update({
         where: { id: leadId },
-        data: { status: body.status },
+        data: agentData,
       });
       return NextResponse.json({ lead: updated });
     }
