@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendTelegramNotification, formatNewLeadMessage } from '@/lib/telegram';
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// OPTIONS — preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 // POST /api/leads/webhook — универсальный вебхук для любой формы
 //
 // Принимает ЛЮБЫЕ поля. Маппинг:
@@ -44,7 +55,7 @@ export async function POST(request) {
       return NextResponse.json({
         error: 'Нужно хотя бы одно поле: name, email или phone',
         hint: 'Отправьте JSON с любыми полями. Например: {"name":"Иван","email":"ivan@test.ru","agentCode":"12345"}',
-      }, { status: 400 });
+      }, { status: 400, headers: CORS_HEADERS });
     }
 
     // Находим агента по коду
@@ -72,9 +83,9 @@ export async function POST(request) {
     const code = agent?.agentCode || 'нет агента';
     sendTelegramNotification(formatNewLeadMessage(lead, code)).catch(console.error);
 
-    return NextResponse.json({ success: true, leadId: lead.id }, { status: 201 });
+    return NextResponse.json({ success: true, leadId: lead.id }, { status: 201, headers: CORS_HEADERS });
   } catch (error) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
+    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500, headers: CORS_HEADERS });
   }
 }
