@@ -30,7 +30,7 @@ export default function GuidePage() {
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <p style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 3, color: '#4f9cff', marginBottom: 12 }}>Агентская система</p>
           <h1 style={{ fontSize: 48, fontWeight: 800, margin: '0 0 16px', background: 'linear-gradient(135deg, #4f9cff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            LOGOS
+            LOGOSSTUDIO
           </h1>
           <p style={{ fontSize: 20, color: '#8b949e', maxWidth: 500, margin: '0 auto' }}>
             Полное руководство по привлечению клиентов.<br/>Читай, применяй, зарабатывай.
@@ -45,13 +45,23 @@ export default function GuidePage() {
           <Highlight>Твоя цепочка: найти → зацепить → передать нам → получить %</Highlight>
         </Card>
 
+        {/* Section: Наш продукт */}
+        <Card emoji="🚀" title="Что мы предлагаем клиентам">
+          <div style={styles.grid}>
+            <Stat value="1–2 дня" label="Готовый сайт с момента договора" />
+            <Stat value="10–50K ₽" label="Стоимость — ниже рынка" />
+          </div>
+          <p style={{ marginTop: 16 }}>Мы делаем <Accent>премиальные, современные сайты с красивым дизайном</Accent> — быстро и за доступные деньги. Клиент получает сайт уровня студии за 200k, но платит от 10 до 50 тысяч. Это наше главное оружие.</p>
+          <Highlight>Быстро. Красиво. Дёшево. — Это то, что отличает нас от конкурентов и продаёт сильнее любого скрипта.</Highlight>
+        </Card>
+
         {/* Section 2: Как зарабатывают */}
         <Card emoji="💰" title="Как здесь зарабатывают">
           <div style={styles.grid}>
-            <Stat value="15–25%" label="Комиссия с каждой сделки" />
-            <Stat value="5–10" label="Лидов в день = стабильный доход" />
+            <Stat value="15%" label="Комиссия со старта" />
+            <Stat value="до 25%" label="Рост при хорошем результате" />
           </div>
-          <p style={{ marginTop: 16 }}>Средний чек на создание сайта — <Accent>от 30 000 до 150 000 ₽</Accent>. С одного закрытого клиента ты можешь получить от 4 500 до 37 500 ₽.</p>
+          <p style={{ marginTop: 16 }}>Стоимость сайта — <Accent>от 10 000 до 50 000 ₽</Accent>. С каждого закрытого клиента ты получаешь 15% от суммы продажи — это от 1 500 до 7 500 ₽ за одну сделку.</p>
           <p>Формула простая: <Accent>деньги = объём действий</Accent>. Чем больше пишешь — тем больше зарабатываешь. Нет потолка.</p>
         </Card>
 
@@ -67,7 +77,7 @@ export default function GuidePage() {
               <p style={{ fontSize: 13, color: '#8b949e' }}>Все хотят денег и заявки. Ты говоришь на языке выгоды, а не технологий.</p>
             </div>
           </div>
-          <Highlight>Запомни: ты продаёшь не продукт, а результат. Не «сайт за 50к», а «система, которая приносит 10 заявок в неделю».</Highlight>
+          <Highlight>Запомни: ты продаёшь не продукт, а результат. Не «сайт за 20к», а «система, которая приносит заявки каждый день».</Highlight>
         </Card>
 
         {/* Section: Channels header */}
@@ -78,7 +88,7 @@ export default function GuidePage() {
         </div>
 
         {/* Channel: 2GIS */}
-        <Card emoji="📍" title="2ГИС / Google Карты" badge="Тёплый трафик">
+        <Card emoji="📍" title="2ГИС / Google Карты / Яндекс Карты" badge="Тёплый трафик">
           <p><strong>Кого ищем:</strong> салоны красоты, автосервисы, ремонт квартир, юридические услуги, стоматологии — любой локальный бизнес.</p>
           <p><strong>Наш клиент:</strong> у него либо <Accent>плохой сайт</Accent> (визитка из 2010-х), либо <Accent>нет сайта вообще</Accent> — на карточке только номер телефона.</p>
 
@@ -106,7 +116,7 @@ export default function GuidePage() {
         </Card>
 
         {/* Channel: Avito */}
-        <Card emoji="📦" title="Авито / Юла" badge="Входящий поток">
+        <Card emoji="📦" title="Авито / Юла / OLX" badge="Входящий поток">
           <p>Здесь ты не пишешь первым — <Accent>клиенты приходят сами</Accent>. Нужно лишь правильно составить объявление.</p>
 
           <p style={{ fontWeight: 600, color: '#4f9cff', marginTop: 16 }}>Примеры заголовков:</p>
@@ -182,6 +192,25 @@ export default function GuidePage() {
             <Stat value="< 30 мин" label="Время ответа лиду" />
           </div>
           <p style={{ marginTop: 16 }}>Утром — собираешь базу контактов. Днём — отправляешь сообщения. Вечером — обрабатываешь ответы. <Accent>Каждый день, без пропусков.</Accent></p>
+
+          <div style={{ marginTop: 20, padding: 20, background: 'rgba(74,222,128,0.06)', borderRadius: 12, border: '1px solid rgba(74,222,128,0.15)' }}>
+            <p style={{ fontWeight: 700, color: '#4ade80', fontSize: 16, marginBottom: 12 }}>💵 Расчёт заработка</p>
+            <div style={styles.grid}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14 }}>
+                <p style={{ color: '#8b949e', fontSize: 12, marginBottom: 4 }}>📉 Минимум (ленивый режим)</p>
+                <p style={{ fontSize: 14 }}>50 сообщений → 5 ответов → <Accent>1 клиент в неделю</Accent></p>
+                <p style={{ fontSize: 14 }}>Средний чек 15 000 ₽ × 15% = <strong style={{ color: '#4ade80' }}>2 250 ₽/нед</strong></p>
+                <p style={{ fontSize: 14 }}>В месяц: <strong style={{ color: '#4ade80' }}>~9 000 ₽</strong></p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14 }}>
+                <p style={{ color: '#8b949e', fontSize: 12, marginBottom: 4 }}>📈 Максимум (режим хищника)</p>
+                <p style={{ fontSize: 14 }}>50 сообщений/день → 10 ответов → <Accent>5–8 клиентов в неделю</Accent></p>
+                <p style={{ fontSize: 14 }}>Средний чек 30 000 ₽ × 15% = <strong style={{ color: '#4ade80' }}>4 500 ₽/сделка</strong></p>
+                <p style={{ fontSize: 14 }}>В месяц: <strong style={{ color: '#4ade80', fontSize: 18 }}>90 000 – 144 000 ₽</strong></p>
+              </div>
+            </div>
+            <Highlight>Разница между 9к и 144к — это не удача, а количество сообщений в день.</Highlight>
+          </div>
         </Card>
 
         {/* CTA */}
