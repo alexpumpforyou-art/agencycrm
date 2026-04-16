@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession, hashPassword } from '@/lib/auth';
 
 // PATCH /api/agents/[id] — управление агентом (только админ)
 export async function PATCH(request, props) {
@@ -18,12 +18,35 @@ export async function PATCH(request, props) {
     if (body.isBlocked !== undefined) updateData.isBlocked = body.isBlocked;
     if (body.commissionRate !== undefined) {
       const rate = parseFloat(body.commissionRate);
-      if (rate < 10 || rate > 30) {
-        return NextResponse.json({ error: 'Комиссия от 10% до 30%' }, { status: 400 });
+      if (rate < 0 || rate > 100) {
+        return NextResponse.json({ error: 'Комиссия от 0% до 100%' }, { status: 400 });
       }
       updateData.commissionRate = rate;
     }
     if (body.name) updateData.name = body.name;
+    if (body.telegramUsername !== undefined) updateData.telegramUsername = body.telegramUsername;
+    if (body.agentNotes !== undefined) updateData.agentNotes = body.agentNotes;
+
+    // Админ может менять пароль агента
+    if (body.newPassword) {
+      if (body.newPassword.length < 6) {
+        return NextResponse.json({ error: 'Пароль минимум 6 символов' }, { status: 400 });
+      }
+      updateData.passwordHash = await hashPassword(body.newPassword);
+    }
+
+    // Начисление/списание баланса
+    if (body.balanceChange !== undefined) {
+      const change = parseFloat(body.balanceChange);
+      if (isNaN(change)) {
+        return NextResponse.json({ error: 'Некорректная сумма' }, { status: 400 });
+      }
+      const currentAgent = await prisma.user.findUnique({
+        where: { id: agentId },
+        select: { balance: true },
+      });
+      updateData.balance = (currentAgent?.balance || 0) + change;
+    }
 
     const agent = await prisma.user.update({
       where: { id: agentId },
@@ -31,6 +54,8 @@ export async function PATCH(request, props) {
       select: {
         id: true, name: true, email: true, agentCode: true,
         commissionRate: true, isBlocked: true, createdAt: true,
+        balance: true, telegramUsername: true, agentNotes: true,
+        _count: { select: { leads: true, clicks: true } },
       },
     });
 
