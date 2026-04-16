@@ -383,6 +383,14 @@ export default function DashboardPage() {
             <h3>📦 Материалы для работы ({materials.length})</h3>
           </div>
           <div style={{ padding: 16 }}>
+            {/* Guide link */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(79,156,255,0.1), rgba(167,139,250,0.08))', borderRadius: 12, padding: 20, marginBottom: 16, border: '1px solid rgba(79,156,255,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <h4 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>📖 Руководство для агента</h4>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Скрипты продаж, каналы привлечения, советы</p>
+              </div>
+              <a href="/guide" className="btn btn-sm btn-primary" style={{ width: 'auto' }}>Открыть гайд →</a>
+            </div>
             {materials.length === 0 ? (
               <p style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>Материалов пока нет</p>
             ) : (
