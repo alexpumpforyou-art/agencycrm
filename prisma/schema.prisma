@@ -21,20 +21,23 @@ enum LeadStatus {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  email          String   @unique
-  passwordHash   String
-  name           String
-  role           Role     @default(AGENT)
-  agentCode      String   @unique
-  commissionRate Float    @default(10.0)
-  isBlocked      Boolean  @default(false)
-  onboardingDone Boolean  @default(false)
-  telegramChatId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  leads          Lead[]
-  clicks         Click[]
+  id               Int      @id @default(autoincrement())
+  email            String   @unique
+  passwordHash     String
+  name             String
+  role             Role     @default(AGENT)
+  agentCode        String   @unique
+  commissionRate   Float    @default(10.0)
+  balance          Float    @default(0)
+  isBlocked        Boolean  @default(false)
+  onboardingDone   Boolean  @default(false)
+  telegramChatId   String?
+  telegramUsername  String   @default("")
+  agentNotes       String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  leads            Lead[]
+  clicks           Click[]
 }
 
 model Lead {
