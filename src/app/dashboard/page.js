@@ -202,6 +202,11 @@ export default function DashboardPage() {
               <div className="stat-value">{(stats.earnings || 0).toLocaleString('ru-RU')} ₽</div>
               <div className="stat-label">Мой заработок</div>
             </div>
+            <div className="stat-card success">
+              <div className="stat-icon">💵</div>
+              <div className="stat-value">{(user?.balance || 0).toLocaleString('ru-RU')} ₽</div>
+              <div className="stat-label">Мой баланс</div>
+            </div>
           </div>
         )}
 
