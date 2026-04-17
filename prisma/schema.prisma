@@ -39,6 +39,7 @@ model User {
   leads            Lead[]
   clicks           Click[]
   candidates       Candidate[]
+  transactions     BalanceTransaction[]
 }
 
 model Lead {
@@ -136,4 +137,23 @@ model Candidate {
 
   @@index([status])
   @@index([callDate])
+}
+
+enum TransactionType {
+  CREDIT
+  PAYOUT
+  ADJUSTMENT
+}
+
+model BalanceTransaction {
+  id        Int             @id @default(autoincrement())
+  agentId   Int
+  agent     User            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  type      TransactionType
+  amount    Float
+  comment   String          @default("")
+  createdAt DateTime        @default(now())
+
+  @@index([agentId])
+  @@index([createdAt])
 }
