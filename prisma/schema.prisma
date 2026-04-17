@@ -38,6 +38,7 @@ model User {
   updatedAt        DateTime @updatedAt
   leads            Lead[]
   clicks           Click[]
+  candidates       Candidate[]
 }
 
 model Lead {
@@ -101,4 +102,38 @@ model Click {
   @@index([agentId])
   @@index([agentCode])
   @@index([createdAt])
+}
+
+enum CandidateStatus {
+  NEW
+  CONTACTED
+  CALL_SCHEDULED
+  ACCEPTED
+  REJECTED
+}
+
+enum CandidateSource {
+  HH
+  KWORK
+  AVITO
+  TELEGRAM
+  OTHER
+}
+
+model Candidate {
+  id           Int             @id @default(autoincrement())
+  name         String
+  contact      String          @default("")
+  source       CandidateSource @default(OTHER)
+  status       CandidateStatus @default(NEW)
+  notes        String          @default("")
+  callDate     DateTime?
+  callReminded Boolean         @default(false)
+  linkedAgentId Int?
+  linkedAgent  User?           @relation(fields: [linkedAgentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([status])
+  @@index([callDate])
 }
