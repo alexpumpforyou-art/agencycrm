@@ -21,6 +21,7 @@ export async function GET() {
         agentCode: true,
         onboardingDone: true,
         commissionRate: true,
+        balance: true,
       },
     });
 

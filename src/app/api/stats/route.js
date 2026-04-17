@@ -59,13 +59,17 @@ export async function GET(request) {
         take: 10,
       });
 
-      // Сумма закрытых сделок для каждого агента
+      // Один запрос вместо N запросов: сумма по всем агентам сразу
+      const revenueByAgent = await prisma.lead.groupBy({
+        by: ['agentId'],
+        _sum: { orderCost: true },
+        where: { status: 'DEAL_CLOSED', agentId: { in: topAgents.map(a => a.id) } },
+      });
+      const revenueMap = {};
+      revenueByAgent.forEach(r => { revenueMap[r.agentId] = r._sum.orderCost || 0; });
+
       for (const agent of topAgents) {
-        const agentClosed = await prisma.lead.aggregate({
-          _sum: { orderCost: true },
-          where: { agentId: agent.id, status: 'DEAL_CLOSED' },
-        });
-        agent.totalRevenue = agentClosed._sum.orderCost || 0;
+        agent.totalRevenue = revenueMap[agent.id] || 0;
         agent.earnings = agent.totalRevenue * (agent.commissionRate / 100);
       }
     }
@@ -76,16 +80,16 @@ export async function GET(request) {
     let chartData = {};
 
     if (period === 'all') {
-      const allLeadsDates = await prisma.lead.findMany({
+      // Считаем по месяцам на уровне SQL вместо загрузки всех лидов
+      const allLeads = await prisma.lead.findMany({
         where: whereAgent,
         select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
       });
-      allLeadsDates.forEach(l => {
-        const key = l.createdAt.toISOString().substring(0, 7); // YYYY-MM
+      allLeads.forEach(l => {
+        const key = l.createdAt.toISOString().substring(0, 7);
         chartData[key] = (chartData[key] || 0) + 1;
       });
-      // Sort months
-      chartData = Object.fromEntries(Object.entries(chartData).sort());
     } else {
       const daysStr = parseInt(period) === 30 ? 30 : 7;
       const startDate = new Date();
