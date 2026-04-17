@@ -11,6 +11,9 @@ export default function AdminAgentsPage() {
   const [editAgent, setEditAgent] = useState(null);
   const [balanceAgent, setBalanceAgent] = useState(null);
   const [balanceAmount, setBalanceAmount] = useState('');
+  const [balanceType, setBalanceType] = useState('CREDIT');
+  const [balanceComment, setBalanceComment] = useState('');
+  const [transactions, setTransactions] = useState([]);
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', commissionRate: '10' });
   const [editForm, setEditForm] = useState({});
   const [createError, setCreateError] = useState('');
@@ -94,16 +97,30 @@ export default function AdminAgentsPage() {
     fetchAgents();
   }
 
+  async function openBalance(agent) {
+    setBalanceAgent(agent);
+    setBalanceAmount('');
+    setBalanceType('CREDIT');
+    setBalanceComment('');
+    const res = await fetch(`/api/transactions?agentId=${agent.id}`);
+    const data = await res.json();
+    setTransactions(data.transactions || []);
+  }
+
   async function handleBalanceChange() {
     const amount = parseFloat(balanceAmount);
-    if (isNaN(amount) || amount === 0) return;
-    await fetch(`/api/agents/${balanceAgent.id}`, {
-      method: 'PATCH',
+    if (isNaN(amount) || amount <= 0) return;
+    await fetch('/api/transactions', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ balanceChange: amount }),
+      body: JSON.stringify({ agentId: balanceAgent.id, type: balanceType, amount, comment: balanceComment }),
     });
-    setBalanceAgent(null);
+    // Обновить историю и баланс
+    const res = await fetch(`/api/transactions?agentId=${balanceAgent.id}`);
+    const data = await res.json();
+    setTransactions(data.transactions || []);
     setBalanceAmount('');
+    setBalanceComment('');
     fetchAgents();
   }
 
@@ -203,25 +220,77 @@ export default function AdminAgentsPage() {
       {/* Balance Modal */}
       {balanceAgent && (
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setBalanceAgent(null); }}>
-          <div className="modal" style={{ maxWidth: 400 }}>
+          <div className="modal" style={{ maxWidth: 560 }}>
             <h2>💰 Баланс: {balanceAgent.name}</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>
               Текущий баланс: <strong style={{ color: 'var(--success)', fontSize: 18 }}>
                 {(balanceAgent.balance || 0).toLocaleString('ru-RU')} ₽
               </strong>
             </p>
-            <div className="form-group">
-              <label>Сумма (положительная — начислить, отрицательная — списать)</label>
-              <input className="form-input" type="number" step="0.01" placeholder="5000"
-                value={balanceAmount}
-                onChange={e => setBalanceAmount(e.target.value)} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label>Тип</label>
+                <select className="form-input" value={balanceType} onChange={e => setBalanceType(e.target.value)}>
+                  <option value="CREDIT">💵 Начисление</option>
+                  <option value="PAYOUT">📤 Выплата</option>
+                  <option value="ADJUSTMENT">🔧 Корректировка</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Сумма (₽)</label>
+                <input className="form-input" type="number" step="0.01" min="0" placeholder="5000"
+                  value={balanceAmount} onChange={e => setBalanceAmount(e.target.value)} />
+              </div>
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-outline" onClick={() => setBalanceAgent(null)}>Отмена</button>
+            <div className="form-group">
+              <label>Комментарий</label>
+              <input className="form-input" placeholder="Комиссия за лид #42 / Выплата на карту..."
+                value={balanceComment} onChange={e => setBalanceComment(e.target.value)} />
+            </div>
+            <div className="modal-actions" style={{ marginBottom: 16 }}>
+              <button className="btn btn-outline" onClick={() => setBalanceAgent(null)}>Закрыть</button>
               <button className="btn btn-primary" style={{ width: 'auto' }} onClick={handleBalanceChange}>
-                {parseFloat(balanceAmount) >= 0 ? '💵 Начислить' : '📤 Списать'}
+                {balanceType === 'PAYOUT' ? '📤 Списать' : '💵 Начислить'}
               </button>
             </div>
+
+            {/* История */}
+            {transactions.length > 0 && (
+              <div>
+                <h4 style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 8 }}>История операций</h4>
+                <div style={{ maxHeight: 220, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <table style={{ fontSize: 12 }}>
+                    <thead>
+                      <tr>
+                        <th>Дата</th>
+                        <th>Тип</th>
+                        <th>Сумма</th>
+                        <th>Комментарий</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map(t => (
+                        <tr key={t.id}>
+                          <td style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                            {new Date(t.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td>
+                            <span style={{ color: t.type === 'PAYOUT' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
+                              {t.type === 'CREDIT' ? '💵' : t.type === 'PAYOUT' ? '📤' : '🔧'}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 600, color: t.type === 'PAYOUT' ? 'var(--danger)' : 'var(--success)' }}>
+                            {t.type === 'PAYOUT' ? '-' : '+'}{t.amount.toLocaleString('ru-RU')} ₽
+                          </td>
+                          <td style={{ color: 'var(--text-secondary)', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.comment || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -261,7 +330,7 @@ export default function AdminAgentsPage() {
                   <td>
                     <span
                       style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--success)', borderBottom: '1px dashed var(--text-muted)' }}
-                      onClick={() => setBalanceAgent(agent)}
+                      onClick={() => openBalance(agent)}
                       title="Нажмите чтобы начислить/списать"
                     >
                       {(agent.balance || 0).toLocaleString('ru-RU')} ₽
