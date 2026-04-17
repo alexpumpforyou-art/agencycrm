@@ -35,6 +35,7 @@ export default function AdminLayout({ children }) {
   const navItems = [
     { href: '/admin', label: '📊 Обзор', exact: true },
     { href: '/admin/agents', label: '👥 Агенты' },
+    { href: '/admin/candidates', label: '🎯 Кандидаты' },
     { href: '/admin/leads', label: '📋 Все лиды' },
     { href: '/admin/landing-pages', label: '🌐 Посадочные' },
     { href: '/admin/materials', label: '📦 Материалы' },
