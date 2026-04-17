@@ -197,19 +197,21 @@ export default function GuidePage() {
             <p style={{ fontWeight: 700, color: '#4ade80', fontSize: 16, marginBottom: 12 }}>💵 Расчёт заработка</p>
             <div style={styles.grid}>
               <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14 }}>
-                <p style={{ color: '#8b949e', fontSize: 12, marginBottom: 4 }}>📉 Минимум (ленивый режим)</p>
-                <p style={{ fontSize: 14 }}>50 сообщений → 5 ответов → <Accent>1 клиент в неделю</Accent></p>
-                <p style={{ fontSize: 14 }}>Средний чек 15 000 ₽ × 15% = <strong style={{ color: '#4ade80' }}>2 250 ₽/нед</strong></p>
-                <p style={{ fontSize: 14 }}>В месяц: <strong style={{ color: '#4ade80' }}>~9 000 ₽</strong></p>
+                <p style={{ color: '#8b949e', fontSize: 12, marginBottom: 4 }}>📊 Стабильный режим</p>
+                <p style={{ fontSize: 14 }}>50 сообщений/день → 10 ответов → <Accent>4 клиента в неделю</Accent></p>
+                <p style={{ fontSize: 14 }}>Средний чек 20 000 ₽ × 15% = <strong style={{ color: '#4ade80' }}>3 000 ₽/сделка</strong></p>
+                <p style={{ fontSize: 14 }}>В месяц: <strong style={{ color: '#4ade80', fontSize: 18 }}>~50 000 ₽</strong></p>
+                <p style={{ fontSize: 12, color: '#8b949e', marginTop: 4 }}>≈ $550/мес</p>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14 }}>
-                <p style={{ color: '#8b949e', fontSize: 12, marginBottom: 4 }}>📈 Максимум (режим хищника)</p>
-                <p style={{ fontSize: 14 }}>50 сообщений/день → 10 ответов → <Accent>5–8 клиентов в неделю</Accent></p>
-                <p style={{ fontSize: 14 }}>Средний чек 30 000 ₽ × 15% = <strong style={{ color: '#4ade80' }}>4 500 ₽/сделка</strong></p>
-                <p style={{ fontSize: 14 }}>В месяц: <strong style={{ color: '#4ade80', fontSize: 18 }}>90 000 – 144 000 ₽</strong></p>
+                <p style={{ color: '#8b949e', fontSize: 12, marginBottom: 4 }}>🔥 Режим хищника</p>
+                <p style={{ fontSize: 14 }}>50+ сообщений × 3 канала → <Accent>12–14 клиентов в неделю</Accent></p>
+                <p style={{ fontSize: 14 }}>Средний чек 35 000 ₽ × 15% = <strong style={{ color: '#4ade80' }}>5 250 ₽/сделка</strong></p>
+                <p style={{ fontSize: 14 }}>В месяц: <strong style={{ color: '#4ade80', fontSize: 18 }}>~280 000 ₽</strong></p>
+                <p style={{ fontSize: 12, color: '#8b949e', marginTop: 4 }}>≈ $3 000/мес</p>
               </div>
             </div>
-            <Highlight>Разница между 9к и 144к — это не удача, а количество сообщений в день.</Highlight>
+            <Highlight>Разница между 50к и 280к — это не удача, а количество сообщений в день и каналов в работе.</Highlight>
           </div>
         </Card>
 
