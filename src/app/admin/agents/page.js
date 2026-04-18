@@ -21,13 +21,28 @@ export default function AdminAgentsPage() {
   const [editError, setEditError] = useState('');
 
   const fetchAgents = useCallback(async () => {
-    const res = await fetch('/api/agents');
-    const data = await res.json();
-    setAgents(data.agents || []);
+    try {
+      const res = await fetch('/api/agents');
+      const data = await res.json();
+      setAgents(data.agents || []);
+    } catch (e) { console.error('Fetch agents error:', e); }
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchAgents(); }, [fetchAgents]);
+
+  // Escape закрывает любую модалку
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setShowCreate(false);
+        setEditAgent(null);
+        setBalanceAgent(null);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   async function handleBlock(id, isBlocked) {
     await fetch(`/api/agents/${id}`, {

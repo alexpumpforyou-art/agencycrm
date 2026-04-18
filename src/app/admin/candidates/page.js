@@ -33,18 +33,28 @@ export default function AdminCandidatesPage() {
   const [error, setError] = useState('');
 
   const fetchData = useCallback(async () => {
-    const [candRes, agentsRes] = await Promise.all([
-      fetch('/api/candidates'),
-      fetch('/api/agents'),
-    ]);
-    const candData = await candRes.json();
-    const agentsData = await agentsRes.json();
-    setCandidates(candData.candidates || []);
-    setAgents(agentsData.agents || []);
+    try {
+      const [candRes, agentsRes] = await Promise.all([
+        fetch('/api/candidates'),
+        fetch('/api/agents'),
+      ]);
+      const candData = await candRes.json();
+      const agentsData = await agentsRes.json();
+      setCandidates(candData.candidates || []);
+      setAgents(agentsData.agents || []);
+    } catch (e) { console.error('Fetch candidates error:', e); }
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') { setShowCreate(false); setEditCandidate(null); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const filtered = candidates.filter(c => !filter || c.status === filter);
 
